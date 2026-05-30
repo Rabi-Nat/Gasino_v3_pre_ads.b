@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Global Helpers (Pillar 3)
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Users Collection Match Block (Pillar 2 & 6)
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      
+      allow create: if isSignedIn() && request.auth.uid == userId 
+        && isValidId(userId)
+        && isValidNewUser(incoming());
+        
+      allow update: if isSignedIn() && request.auth.uid == userId 
+        && isValidId(userId)
+        && incoming().userId == existing().userId 
+        && incoming().phoneNumber == existing().phoneNumber
+        && incoming().createdAt == existing().createdAt
+        && isValidUserUpdate(incoming())
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'isPremium', 'premiumExpiry'])
+        );
+
+      allow delete: if false; // Users cannot delete their profile directly
+    }
+
+    // Advertisements Collection Match Block (Publicly readable, only writable via console / false)
+    match /advertisements/{adId} {
+      allow read: if true;
+      allow write: if false; // Managed via Firebase Console directly by the admin
+    }
+
+    // Helper: Validate a newly created User document
+    function isValidNewUser(data) {
+      return data.keys().hasAll(['userId', 'phoneNumber', 'createdAt'])
+        && data.keys().size() >= 3
+        && data.keys().size() <= 6
+        && data.userId == request.auth.uid
+        && data.phoneNumber is string
+        && data.phoneNumber.size() >= 10
+        && data.phoneNumber.size() <= 15
+        && data.createdAt == request.time;
+    }
+
+    // Helper: Validate types during updates
+    function isValidUserUpdate(data) {
+      return (!data.keys().hasAny(['fullName']) || data.fullName is string)
+        && (!data.keys().hasAny(['isPremium']) || data.isPremium is bool)
+        && (!data.keys().hasAny(['premiumExpiry']) || data.premiumExpiry is number);
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with registration details and subscription status under Iranian Café Bazaar rules.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique user identifier from Firebase Authentication (represented by a string)."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's cell phone number."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Optional user's display name."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of profile creation."
+        },
+        "isPremium": {
+          "type": "boolean",
+          "description": "True if the user has an active Golden premium plan."
+        },
+        "premiumExpiry": {
+          "type": "number",
+          "description": "Midnight timestamp when premium membership expires."
+        }
+      },
+      "required": ["userId", "phoneNumber", "createdAt"]
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "description": "Dynamic advertisement banner displayed on the home page.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Direct URL link to the banner image."
+        },
+        "targetUrl": {
+          "type": "string",
+          "description": "Web link or phone number link when a user clicks the banner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Optional ad caption, title, or sponsor name."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Deactivate or activate the ad on the fly."
+        },
+        "order": {
+          "type": "number",
+          "description": "Optional display order."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"],
+          "description": "Explicitly specify 'image' or 'video' media type."
+        },
+        "isVideo": {
+          "type": "boolean",
+          "description": "Set to true to render this advertisement as a short video."
+        }
+      },
+      "required": ["imageUrl", "targetUrl", "isActive"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Direct user profile documents queried by UID."
+    },
+    "/advertisements/{adId}": {
+      "schema": "Advertisement",
+      "description": "Collection of advertisements managed directly from Firebase Console."
+    }
+  }
+}
